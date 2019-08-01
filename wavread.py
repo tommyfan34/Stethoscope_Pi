@@ -15,22 +15,33 @@ def wavread(path, range=None):
     wavfile = wave.open(path, "rb")
     # parameters of the wavfile
     wavpara = wavfile.getparams()
+    # get the # of channel
+    channel = wavfile.getnchannels()
     # get the frame rate and the number of frames
     framerate, nframe = wavpara[2], wavpara[3]
     # read the frame from the data chunk
     datawav = wavfile.readframes(nframe)
     wavfile.close()
     datause = np.fromstring(datawav, dtype=np.short)
-    datause.shape = -1, 2
-    datause = datause.T
-    # normalize the data
-    datause = datause / np.max(datause)
-    time = np.arange(0, nframe) * (1.0/framerate)
-    if range != None:
-        time = time[int(range[0]*framerate) : int(range[1]*framerate)]
-        datause = datause[: , int(range[0]*framerate) : int(range[1]*framerate)]
-    return datause, time, framerate
-
+    # stereo channel
+    if channel == 2:
+        datause.shape = -1, 2
+        datause = datause.T
+        # normalize the data
+        datause = datause / np.max(datause)
+        time = np.arange(0, nframe) * (1.0/framerate)
+        if range != None:
+            time = time[int(range[0]*framerate) : int(range[1]*framerate)]
+            datause = datause[: , int(range[0]*framerate) : int(range[1]*framerate)]
+        return datause[0], time, framerate
+    # mono channel
+    elif channel == 1:
+        datause = datause / np.max(datause)
+        time = np.arange(0, nframe) * (1.0/framerate)
+        if range != None:
+            time = time[int(range[0] * framerate): int(range[1] * framerate)]
+            datause = datause[int(range[0]*framerate) : int(range[1]*framerate)]
+        return datause, time, framerate
 if __name__ == "__main__":
     path = ["01 Apex, Normal S1 S2, Supine, Bell_test.wav", "02 Apex, Split S1, Supine, Bell.wav",
             "03 Apex, S4, LLD, Bell.wav","04 Apex, Mid Sys Click, Supine, Bell.wav","05 Apex, S3, LLD, Bell.wav"]

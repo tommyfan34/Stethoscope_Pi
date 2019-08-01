@@ -56,27 +56,26 @@ def ALE_RLS(dn, M, lamda, delta, delay):
     return dn_hat, wm, en
 
 if __name__ == "__main__":
-    path = ["01 Apex, Normal S1 S2, Supine, Bell_test.wav","02 Apex, Split S1, Supine, Bell.wav",
-            "09 Apex, Holo Sys Mur, Supine, Bell.wav"]
+    path = ["a0001.wav"]
     # SNR is the signal to noise ratio in dB
     SNR = 40
     # crop the .wav file starting from 5 sec to 6 sec
-    audio_clip = [5, 7]
+    audio_clip = [0, 5]
     for i, yi in enumerate(path):
         start_time = time.time()
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
         # corrupt the signal with white noise
-        noise = sqrt(1/2/(10 ** (SNR/10))) * randn(len(wavdata[0]))
+        noise = sqrt(1/2/(10 ** (SNR/10))) * randn(len(wavdata))
         # noise = zeros_like(wavdata[0])
         # noise[int(samplerate*0.3) : int(samplerate*0.3)+50] = 1
-        wavdata_corrupted = wavdata[0] + noise
-        dn_hat, wm, en = ALE_RLS(wavdata_corrupted, 6, 0.995, 1e-7, 2)
+        wavdata_corrupted = wavdata + noise
+        dn_hat, wm, en = ALE_RLS(wavdata_corrupted, 4, 0.995, 1e-7, 4)
         figure(i)
         subplot(311)
         xlabel("time(s)")
         ylabel("normalized magnitude")
         title("original waveform")
-        plot(wavtime, wavdata[0])
+        plot(wavtime, wavdata)
         subplot(312)
         xlabel("time(s)")
         ylabel("normalized magnitude")
@@ -87,7 +86,7 @@ if __name__ == "__main__":
         ylabel("normalized magnitude")
         title("output waveform")
         plot(wavtime, dn_hat)
-        similarity = np.correlate(wavdata[0], dn_hat) / np.sqrt(sum(c * c for c in wavdata[0]) * sum(b * b for b in dn_hat))
+        similarity = np.correlate(wavdata, dn_hat) / np.sqrt(sum(c * c for c in wavdata) * sum(b * b for b in dn_hat))
         print("similarity=", similarity)
         end_time = time.time()
         print("runtime=", end_time-start_time)

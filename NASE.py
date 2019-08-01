@@ -2,6 +2,7 @@ import numpy as np
 from wavread import wavread
 from matplotlib.pyplot import *
 import math
+import sys
 
 """
 NASE(dn) is the function to take normalized average shannon energy on the input sequence
@@ -37,22 +38,18 @@ def NASE(dn, N, samplerate,start_time):
     return Pa, wavtime
 
 if __name__ == "__main__":
-    path = ["01 Apex, Normal S1 S2, Supine, Bell_test.wav","02 Apex, Split S1, Supine, Bell.wav"
-            ,"03 Apex, S4, LLD, Bell.wav", "04 Apex, Mid Sys Click, Supine, Bell.wav",
-            "05 Apex, S3, LLD, Bell.wav",
-            "07 Apex, Mid Sys Mur, Supine, Bell.wav",
-            "09 Apex, Holo Sys Mur, Supine, Bell.wav","10 Apex, Sys Click & Late Sys Mur, LLD, Bell.wav"]
+    path = ["01 Apex, Normal S1 S2, Supine, Bell_test.wav","a0001.wav","a0002.wav"]
     # crop the .wav file starting from 5 sec to 6 sec
     audio_clip = [5, 7]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
-        wavdata2, wavtime2 = NASE(wavdata[0], 0.02*samplerate, samplerate,audio_clip[0])
+        wavdata2, wavtime2 = NASE(wavdata, 0.02*samplerate, samplerate,audio_clip[0])
         figure(i)
         subplot(211)
         xlabel('time(s)')
         ylabel('magnitude')
         title('Before NASE')
-        plot(wavtime, wavdata[0])
+        plot(wavtime, wavdata)
         subplot(212)
         xlabel('time(s')
         ylabel('magnitude')
