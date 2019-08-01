@@ -10,7 +10,7 @@ N is the signal length in a predetermined time segments
 M is the overlapping length
 Pa is the output
 
-Date: 7/31/2019 
+Date: 7/31/2019   
 Author: Xiao Fan
 """
 def NASE(dn, N, samplerate,start_time):
