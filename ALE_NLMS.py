@@ -3,23 +3,25 @@ from numpy.random import *
 from scipy import signal
 from matplotlib.pyplot import *
 from wavread import wavread
+from NASE import NASE
 import time
 """
-This function is to implement adaptive line enhancer with LMS algorithm
+This function is to implement adaptive line enhancer with NLMS algorithm
 dn = the input signal sequence
 M = the number of the response of the FIR filter (rank M-1)
-mu = the LMS step size
+mu = the NLMS step size
 un = delayed signal
 dn_hat = filtered signal
 en = difference between dn and dn_hat
 wm = response sequence of the FIR filter, shape = (M,1)
 delta = the delayed sample. For the white noise whose all samples are uncorrelated, delta could be 1
 xn = the vector to make correlation with e[n], shape = (M,1)
+a = alpha coefficient to prevent the denominator of mu become 0
 
 Author: Xiao Fan
-Date: 7/25/2019
+Date: 8/1/2019
 """
-def ALE_LMS(dn, M, mu, delta):
+def ALE_NLMS(dn, M, mu, delta, a):
     # normalize mu
     mu /= M
     # initialize the FIR response sequence
@@ -45,12 +47,12 @@ def ALE_LMS(dn, M, mu, delta):
         # form the error sequence
         en[yi - 1, 0] = dn[yi - 1] - dn_hat[yi - 1, 0]
         # update the weight sequence
-        wm += 2 * mu * en[yi - 1] * xn
+        wm +=  M * mu / (a + np.dot(xn.T, xn))* en[yi - 1] * xn
     dn_hat = dn_hat.flatten('F')
     return dn_hat, wm, en
 
 if __name__ == "__main__":
-    path = ["a0001.wav"]
+    path = ["a0001.wav","a0002.wav","01 Apex, Normal S1 S2, Supine, Bell_test.wav"]
     # SNR is the signal to noise ratio in dB
     SNR = 10
     # crop the .wav file starting from 5 sec to 6 sec
@@ -63,23 +65,29 @@ if __name__ == "__main__":
         # noise = zeros_like(wavdata[0])
         # noise[int(samplerate*0.3) : int(samplerate*0.3)+50] = 1
         wavdata_corrupted = wavdata + noise
-        dn_hat, wm, en = ALE_LMS(wavdata_corrupted,32, 0.032, 2)
+        dn_hat, wm, en = ALE_NLMS(wavdata_corrupted,32, 0.016, 1, 0.1)
+        wavdata2, wavtime2 = NASE(wavdata, 0.02 * samplerate, samplerate, audio_clip[0])
         figure(i)
-        subplot(311)
+        subplot(411)
         xlabel("time(s)")
         ylabel("normalized magnitude")
         title("original waveform")
         plot(wavtime, wavdata)
-        subplot(312)
+        subplot(412)
         xlabel("time(s)")
         ylabel("normalized magnitude")
         title("corrupted waveform")
         plot(wavtime, wavdata_corrupted)
-        subplot(313)
+        subplot(413)
         xlabel("time(s)")
         ylabel("normalized magnitude")
         title("output waveform")
         plot(wavtime, dn_hat)
+        subplot(414)
+        xlabel("time(s)")
+        ylabel("normalized magnitude")
+        title("after NASE")
+        plot(wavtime2, wavdata2)
         similarity = np.correlate(wavdata, dn_hat) / np.sqrt(sum(c * c for c in wavdata) * sum(b * b for b in dn_hat))
         print("similarity=", similarity)
         end_time = time.time()

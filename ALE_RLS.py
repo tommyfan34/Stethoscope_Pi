@@ -31,6 +31,7 @@ def ALE_RLS(dn, M, lamda, delta, delay):
     wm = np.array([zeros(M)]).T
     P = np.eye(M) * delta
     N = len(dn)
+    #dn_hat=np.array([dn]).T
     dn_hat = np.array([zeros_like(dn)]).T
     en = np.array([zeros_like(dn)]).T
     # delay the signal by "delay"
@@ -56,9 +57,9 @@ def ALE_RLS(dn, M, lamda, delta, delay):
     return dn_hat, wm, en
 
 if __name__ == "__main__":
-    path = ["a0001.wav"]
+    path = ["a0001.wav","a0002.wav"]
     # SNR is the signal to noise ratio in dB
-    SNR = 40
+    SNR = 10
     # crop the .wav file starting from 5 sec to 6 sec
     audio_clip = [0, 5]
     for i, yi in enumerate(path):
@@ -69,7 +70,7 @@ if __name__ == "__main__":
         # noise = zeros_like(wavdata[0])
         # noise[int(samplerate*0.3) : int(samplerate*0.3)+50] = 1
         wavdata_corrupted = wavdata + noise
-        dn_hat, wm, en = ALE_RLS(wavdata_corrupted, 4, 0.995, 1e-7, 4)
+        dn_hat, wm, en = ALE_RLS(wavdata_corrupted, 16, 0.95, 1e-3, 2)
         figure(i)
         subplot(311)
         xlabel("time(s)")
