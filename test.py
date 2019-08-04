@@ -6,4 +6,8 @@ print(y.shape)
 z=x.flatten()
 print(z)
 print(z.shape)
+a=[0,2,4]
+b=np.arange(0,10)
+c=b[a]
+print(c)
 
