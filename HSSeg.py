@@ -54,11 +54,11 @@ def find_locmax(data):
         return [0]
     if data[1] < data[0]:
         locmax.append(0)
-    if data[-2] < data[-1]:
-        locmax.append(length-1)
     for i in range(1, length-1):
         if data[i] > data[i-1] and data[i] > data[i+1]:
             locmax.append(i)
+    if data[-2] < data[-1]:
+        locmax.append(length-1)
     return locmax
 
 if __name__ == "__main__":
