@@ -42,15 +42,29 @@ def wavread(path, range=None):
             time = time[int(range[0] * framerate): int(range[1] * framerate)]
             datause = datause[int(range[0]*framerate) : int(range[1]*framerate)]
         return datause, time, framerate
+
+def fft_wav(waveData, plots=True):
+    f_array = np.fft.fft(waveData)
+    f_abs = f_array
+    axis_f = np.linspace(0, 500, np.int(len(f_array)/2))
+    if plots == True:
+        plt.figure(dpi=100)
+        plt.plot(axis_f, np.abs(f_abs[0:len(axis_f)]))
+        # plt.plot(axis_f, np.abs(f_abs))
+        plt.xlabel("Frequency")
+        plt.ylabel("Amplitude spectrum")
+        plt.title("Tile map")
+        plt.show()
+    return f_abs
+
 if __name__ == "__main__":
-    path = ["01 Apex, Normal S1 S2, Supine, Bell_test.wav", "02 Apex, Split S1, Supine, Bell.wav",
-            "03 Apex, S4, LLD, Bell.wav","04 Apex, Mid Sys Click, Supine, Bell.wav","05 Apex, S3, LLD, Bell.wav"]
+    path = ["a0001.wav","a0002.wav","01 Apex, Normal S1 S2, Supine, Bell_test.wav"]
     # plot the waveform of the input audio
     for i, n in enumerate(path):
         # read the above
         wavdata, wavtime, samplerate = wavread(n,[5,7])
         fft_size=65536
-        #fft_size=len(wavdata[0])
+        fft_size=len(wavdata[0])
         wavdatax = wavdata[0, :fft_size]
         xf=np.fft.fft(wavdatax)/fft_size
         xf=xf[range(int(fft_size/2))]
@@ -62,7 +76,7 @@ if __name__ == "__main__":
         plt.title(n)
         plt.xlabel("time(s)")
         plt.ylabel("Normalized Magnitude")
-        plt.plot(wavtime, wavdata[0])
+        plt.plot(wavtime, wavdata)
         plt.subplot(212)
         plt.title("frequency components")
         plt.xlabel("f(Hz)")

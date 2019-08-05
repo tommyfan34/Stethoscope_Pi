@@ -52,7 +52,7 @@ def ALE_NLMS(dn, M, mu, delta, a):
     return dn_hat, wm, en
 
 if __name__ == "__main__":
-    path = ["a0001.wav","a0002.wav","01 Apex, Normal S1 S2, Supine, Bell_test.wav"]
+    path = ["a0001.wav","a0002.wav","01 Apex, Normal S1 S2, Supine, Bell_test.wav","a0008.wav"]
     # SNR is the signal to noise ratio in dB
     SNR = 10
     # crop the .wav file starting from 5 sec to 6 sec
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         # noise[int(samplerate*0.3) : int(samplerate*0.3)+50] = 1
         wavdata_corrupted = wavdata + noise
         dn_hat, wm, en = ALE_NLMS(wavdata_corrupted,32, 0.016, 1, 0.1)
-        wavdata2, wavtime2 = NASE(wavdata, 0.02 * samplerate, samplerate, audio_clip[0])
+        wavdata2, wavtime2 = NASE(dn_hat, 0.02 * samplerate, samplerate, audio_clip[0])
         figure(i)
         subplot(411)
         xlabel("time(s)")

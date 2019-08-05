@@ -27,7 +27,9 @@ def HSSeg(Pa, wavtime):
     # the low threshold of splitted heart sound interval
     HSSplit_LS = 0.05
     # the threshold to determine the peaks
-    threshold = 1
+    threshold = 1.1
+    # the high threshold interval to recover lost peaks
+    HSLost_HS = 0.7
     timegate = np.zeros_like(wavtime)
     # group the time gate into several groups, 'group' is the starting index of each group
     group = []
@@ -54,7 +56,7 @@ def HSSeg(Pa, wavtime):
             # splitted HS, compare the duration of the two closest time gates
             if interval_timegate(peak[i], peak[i+1], timegate, wavtime) < HSSplit_LS:
                 # determine the peak
-                if Pa[peak[i+1]]-Pa[find_peak(peak[i], peak2, timegate)] > 1:
+                if Pa[peak[i+1]]-Pa[find_peak(peak[i], peak2, timegate)] > 0.6:
                     # the former peak is rejected
                     index = peak.index(find_peak(peak[i], peak2, timegate))
                     peak2[index] = -1
@@ -64,7 +66,7 @@ def HSSeg(Pa, wavtime):
                 timegate = merge_timegate(peak[i], peak[i + 1], timegate)
             # HS noise, reject the one that has smaller energy, and delete the time gate associated with it
             elif interval_timegate(peak[i], peak[i+1], timegate, wavtime) < HSNoise_LS:
-                if Pa[peak[i+1]]-Pa[peak[i]] > 1:
+                if Pa[peak[i+1]]-Pa[peak[i]] > 0.6:
                     peak2[i] = -1
                     timegate = delete_timegate(peak[i], timegate)
                 else:
@@ -73,7 +75,33 @@ def HSSeg(Pa, wavtime):
     # reject all the extra peaks
     while -1 in peak2:
         peak2.remove(-1)
-    return wavtime[peak2]
+
+    # recover the lost peaks
+    peak3 = peak2[:]
+    for i, yi in enumerate(wavtime[peak2]):
+        if i != len(wavtime[peak2])-1:
+            #if interval_timegate(peak2[i], peak2[i+1], timegate, wavtime) > HSLost_HS:
+            if wavtime[peak2][i+1] - wavtime[peak2][i] > HSLost_HS:
+                temp_threshold = threshold
+                flag = -1
+                # find the start and end index of the interval timegates
+                for k, yk in enumerate(timegate[peak2[i]:peak2[i+1] + 1]):
+                    if timegate[k + peak2[i]] == 0:
+                        if timegate[k - 1 + peak2[i]] == 1:
+                            start = k + peak2[i]
+                        if timegate[k + 1 + peak2[i]] == 1:
+                            end = k + peak2[i]
+                # find the highest peak in the interval
+                while True:
+                    if flag != -1:
+                        break
+                    temp_threshold -= 0.01
+                    for k in np.arange(start, end+1):
+                        if Pa[k] > temp_threshold:
+                            flag = k
+                timegate[flag] = 1
+                peak3.insert(i+1, flag)
+    return wavtime[peak3]
 
 """
 find_locmax() is to help find the maximal value and return the index
@@ -148,7 +176,8 @@ def delete_timegate(i, timegate):
     return timegate
 
 if __name__ == "__main__":
-    path = ["a0001.wav","a0002.wav","01 Apex, Normal S1 S2, Supine, Bell_test.wav","a0003.wav"]
+    path = ["a0005.wav","a0002.wav","a0001.wav","a0006.wav","a0007.wav",
+            "a0008.wav"]
     audio_clip = [0, 6]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
