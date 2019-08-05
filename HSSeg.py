@@ -30,6 +30,7 @@ def HSSeg(Pa, wavtime):
     threshold = 1.1
     # the high threshold interval to recover lost peaks
     HSLost_HS = 0.7
+    HSLost_LS = 0.5
     timegate = np.zeros_like(wavtime)
     # group the time gate into several groups, 'group' is the starting index of each group
     group = []
@@ -93,14 +94,16 @@ def HSSeg(Pa, wavtime):
                             end = k + peak2[i]
                 # find the highest peak in the interval
                 while True:
-                    if flag != -1:
+                    if flag != -1 or temp_threshold < HSLost_LS:
                         break
                     temp_threshold -= 0.01
                     for k in np.arange(start, end+1):
-                        if Pa[k] > temp_threshold:
+                        if Pa[k] > temp_threshold and wavtime[k] - wavtime[start] > HSNoise_LS and wavtime[end] - wavtime[k] > HSNoise_LS:
                             flag = k
-                timegate[flag] = 1
-                peak3.insert(i+1, flag)
+                if flag != -1:
+                    timegate[flag] = 1
+                    peak3.insert(i+1, flag)
+
     return wavtime[peak3]
 
 """
@@ -176,9 +179,9 @@ def delete_timegate(i, timegate):
     return timegate
 
 if __name__ == "__main__":
-    path = ["a0005.wav","a0002.wav","a0001.wav","a0006.wav","a0007.wav",
-            "a0008.wav"]
-    audio_clip = [0, 6]
+    path = ["a0004.wav","a0002.wav","a0003.wav","a0008.wav","a0005.wav",
+            "a0006.wav", "a0007.wav", "a0001.wav"]
+    audio_clip = [0, 5]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
         wavdata2, wavtime2 = NASE(wavdata, 0.02 * samplerate, samplerate, audio_clip[0])
