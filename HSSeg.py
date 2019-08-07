@@ -30,7 +30,12 @@ def HSSeg(Pa, wavtime):
     threshold = 1.1
     # the high threshold interval to recover lost peaks
     HSLost_HS = 0.7
+    # the minimum threshold to recover lost peaks
     HSLost_LS = 0.5
+    # systolic duration allowable tolerance in percentage
+    sys_tolerance = [0,1]
+    # diastolic duration allowable tolerance in percentage
+    dia_tolerance = [0,1]
     timegate = np.zeros_like(wavtime)
     # group the time gate into several groups, 'group' is the starting index of each group
     group = []
@@ -104,7 +109,47 @@ def HSSeg(Pa, wavtime):
                     timegate[flag] = 1
                     peak3.insert(i+1, flag)
 
-    return wavtime[peak3]
+    # determine which peak is s1 and which is s2
+    s1 = []
+    s2 = []
+    # first find the longest interval between peaks
+    longest = -1
+    longest_index = -1
+    for i, yi in enumerate(peak3):
+        if i != len(peak3) - 1:
+            if wavtime[peak3[i+1]]-wavtime[peak3[i]] > longest:
+                longest_index = i
+                longest = wavtime[peak3[i+1]]-wavtime[peak3[i]]
+    s1.append(peak3[longest_index+1])
+    s2.append(peak3[longest_index])
+    # search backwards
+    i = longest_index
+    flag = 0  # searching for systolic
+    while i != 0:
+        if flag == 0:
+            if wavtime[peak3[i]] - wavtime[peak3[i - 1]] < sys_tolerance[1] and wavtime[peak3[i]] - wavtime[peak3[i-1]] > sys_tolerance[0]:
+                s1.append(peak3[i-1])
+                flag = 1
+        elif flag == 1:
+            if wavtime[peak3[i]] - wavtime[peak3[i - 1]] < dia_tolerance[1] and wavtime[peak3[i]] - wavtime[peak3[i-1]] > dia_tolerance[0]:
+                s2.append(peak3[i-1])
+                flag = 0
+        i -= 1
+    # search forward
+    i = longest_index + 1
+    flag = 0  # searching for systolic
+    while i != len(peak3) - 1:
+        if flag == 0:
+            if wavtime[peak3[i + 1]] - wavtime[peak3[i]] < sys_tolerance[1] and wavtime[peak3[i+1]] - wavtime[peak3[i]] > sys_tolerance[0]:
+                s2.append(peak3[i+1])
+                flag = 1
+        elif flag == 1:
+            if wavtime[peak3[i + 1]] - wavtime[peak3[i]] < dia_tolerance[1] and wavtime[peak3[i+1]] - wavtime[peak3[i]] > dia_tolerance[0]:
+                s1.append(peak3[i+1])
+                flag = 0
+        i += 1
+
+    return wavtime[peak3], wavtime[s1], wavtime[s2]
 
 """
 find_locmax() is to help find the maximal value and return the index
@@ -185,7 +230,7 @@ if __name__ == "__main__":
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
         wavdata2, wavtime2 = NASE(wavdata, 0.02 * samplerate, samplerate, audio_clip[0])
-        peak = HSSeg(wavdata2, wavtime2)
+        peak, s1, s2 = HSSeg(wavdata2, wavtime2)
         figure(i)
         subplot(211)
         xlabel('time(s)')
@@ -195,7 +240,11 @@ if __name__ == "__main__":
         subplot(212)
         xlabel('time(s')
         ylabel('magnitude')
-        title("after NASE")
+        title("After NASE")
         plot(wavtime2, wavdata2)
         plot(peak, np.ones(len(peak)), 'r+')
+        for i, yi in enumerate(s1):
+            text(yi, 1.2, 's1', size = 16, color = 'r')
+        for i, yi in enumerate(s2):
+            text(yi, 1.2, 's2', size = 16, color = 'r')
     show()
