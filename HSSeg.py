@@ -33,9 +33,9 @@ def HSSeg(Pa, wavtime):
     # the minimum threshold to recover lost peaks
     HSLost_LS = 0.5
     # systolic duration allowable tolerance in percentage
-    sys_tolerance = [0,1]
+    sys_tolerance = [0.2,0.5]
     # diastolic duration allowable tolerance in percentage
-    dia_tolerance = [0,1]
+    dia_tolerance = [0.3,1]
     timegate = np.zeros_like(wavtime)
     # group the time gate into several groups, 'group' is the starting index of each group
     group = []
@@ -149,7 +149,77 @@ def HSSeg(Pa, wavtime):
                 flag = 0
         i += 1
 
-    return wavtime[peak3], wavtime[s1], wavtime[s2]
+    # decide the time interval of peaks
+    s1_start = np.zeros_like(s1)
+    s1_end = np.zeros_like(s1)
+    s2_start = np.zeros_like(s2)
+    s2_end = np.zeros_like(s2)
+    for i, yi in enumerate(s1):
+        k = s1[i]
+        count = 0
+        # search backwards
+        while True:
+            if k == 0:
+                s1_start[i] = 0
+                break
+            if count > int(0.01/(wavtime[1]-wavtime[0])):
+                s1_start[i] = k+count
+                break
+            if Pa[k-1] < Pa[k]:
+                count = 0
+            else:
+                count += 1
+            k -= 1
+        # search forward
+        k = s1[i]
+        count = 0
+        while True:
+            if k == len(wavtime)-1:
+                s1_end[i] = len(wavtime)-1
+                break
+            if count > int(0.01/(wavtime[1]-wavtime[0])):
+                s1_end[i] = k-count
+                break
+            if Pa[k+1] < Pa[k]:
+                count = 0
+            else:
+                count += 1
+            k += 1
+
+    for i, yi in enumerate(s2):
+        k = s2[i]
+        count = 0
+        # search backwards
+        while True:
+            if k == 0:
+                s2_start[i] = 0
+                break
+            if count > int(0.01/(wavtime[1]-wavtime[0])):
+                s2_start[i] = k+count
+                break
+            if Pa[k-1] < Pa[k]:
+                count = 0
+            else:
+                count += 1
+            k -= 1
+        # search forward
+        k = s2[i]
+        count = 0
+        while True:
+            if k == len(wavtime)-1:
+                s2_end[i] = len(wavtime)-1
+                break
+            if count > int(0.01/(wavtime[1]-wavtime[0])):
+                s2_end[i] = k-count
+                break
+            if Pa[k+1] < Pa[k]:
+                count = 0
+            else:
+                count += 1
+            k += 1
+
+
+    return wavtime[peak3], wavtime[s1], wavtime[s1_start], wavtime[s1_end], wavtime[s2], wavtime[s2_start], wavtime[s2_end]
 
 """
 find_locmax() is to help find the maximal value and return the index
@@ -226,11 +296,11 @@ def delete_timegate(i, timegate):
 if __name__ == "__main__":
     path = ["a0004.wav","a0002.wav","a0003.wav","a0008.wav","a0005.wav",
             "a0006.wav", "a0007.wav", "a0001.wav"]
-    audio_clip = [0, 5]
+    audio_clip = [0, 6]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
         wavdata2, wavtime2 = NASE(wavdata, 0.02 * samplerate, samplerate, audio_clip[0])
-        peak, s1, s2 = HSSeg(wavdata2, wavtime2)
+        peak, s1, s1_start, s1_end, s2, s2_start, s2_end = HSSeg(wavdata2, wavtime2)
         figure(i)
         subplot(211)
         xlabel('time(s)')
@@ -245,6 +315,10 @@ if __name__ == "__main__":
         plot(peak, np.ones(len(peak)), 'r+')
         for i, yi in enumerate(s1):
             text(yi, 1.2, 's1', size = 16, color = 'r')
+            vlines(s1_start[i], -1, 3, colors = 'r', linestyles='dashed')
+            vlines(s1_end[i], -1, 3, colors='r', linestyles='dashed')
         for i, yi in enumerate(s2):
-            text(yi, 1.2, 's2', size = 16, color = 'r')
+            text(yi, 1.2, 's2', size = 16, color = 'c')
+            vlines(s2_start[i], -1, 3, colors='c', linestyles='dashed')
+            vlines(s2_end[i], -1, 3, colors='c', linestyles='dashed')
     show()
