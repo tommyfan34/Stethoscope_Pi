@@ -165,10 +165,10 @@ def HSSeg(Pa, wavtime):
             if k == 0:
                 s1_start[i] = 0
                 break
-            if count > int(0.01/(wavtime[1]-wavtime[0])):
+            if count > int(0.015/(wavtime[1]-wavtime[0])):
                 s1_start[i] = k+count
                 break
-            if Pa[k-1] < Pa[k]:
+            if Pa[k-1] - Pa[k] < -0.03:
                 count = 0
             else:
                 count += 1
@@ -180,10 +180,10 @@ def HSSeg(Pa, wavtime):
             if k == len(wavtime)-1:
                 s1_end[i] = len(wavtime)-1
                 break
-            if count > int(0.01/(wavtime[1]-wavtime[0])):
+            if count > int(0.015/(wavtime[1]-wavtime[0])):
                 s1_end[i] = k-count
                 break
-            if Pa[k+1] < Pa[k]:
+            if Pa[k+1] - Pa[k] < -0.03:
                 count = 0
             else:
                 count += 1
@@ -197,10 +197,10 @@ def HSSeg(Pa, wavtime):
             if k == 0:
                 s2_start[i] = 0
                 break
-            if count > int(0.01/(wavtime[1]-wavtime[0])):
+            if count > int(0.015/(wavtime[1]-wavtime[0])):
                 s2_start[i] = k+count
                 break
-            if Pa[k-1] < Pa[k]:
+            if Pa[k-1] - Pa[k] < -0.03:
                 count = 0
             else:
                 count += 1
@@ -212,10 +212,10 @@ def HSSeg(Pa, wavtime):
             if k == len(wavtime)-1:
                 s2_end[i] = len(wavtime)-1
                 break
-            if count > int(0.01/(wavtime[1]-wavtime[0])):
+            if count > int(0.015/(wavtime[1]-wavtime[0])):
                 s2_end[i] = k-count
                 break
-            if Pa[k+1] < Pa[k]:
+            if Pa[k+1] - Pa[k] < -0.03:
                 count = 0
             else:
                 count += 1
@@ -301,7 +301,7 @@ def delete_timegate(i, timegate):
 
 if __name__ == "__main__":
     path = ["a0004.wav","a0002.wav","a0003.wav","a0008.wav","a0005.wav",
-            "a0006.wav", "a0007.wav", "a0001.wav"]
+            "a0006.wav", "a0007.wav", "a0001.wav", "01 Apex, Normal S1 S2, Supine, Bell_test.wav"]
     audio_clip = [0, 6]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
