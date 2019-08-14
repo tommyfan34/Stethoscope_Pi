@@ -51,9 +51,12 @@ def HSSeg(Pa, wavtime):
     peak = []
     for i, yi in enumerate(group):
         if i != len(group)-1 and timegate[group[i]] == 1:
-            locmax = find_locmax(Pa[group[i]:group[i+1]])
-            # choose the first locmax as the peak of the group
-            peak.append(locmax[0]+group[i])
+            locmax, globmax = find_locmax(Pa[group[i]:group[i+1]])
+            # choose the biggest locmax as the peak of the group
+            if Pa[globmax+group[i]]-Pa[locmax[0]+group[i]] > 0.3:
+                peak.append(globmax+group[i])
+            else:
+                peak.append(locmax[0]+group[i])
 
     # reject the extra peaks
     peak2=peak[:]
@@ -62,7 +65,7 @@ def HSSeg(Pa, wavtime):
             # splitted HS, compare the duration of the two closest time gates
             if interval_timegate(peak[i], peak[i+1], timegate, wavtime) < HSSplit_LS:
                 # determine the peak
-                if Pa[peak[i+1]]-Pa[find_peak(peak[i], peak2, timegate)] > 0.6:
+                if Pa[peak[i+1]]-Pa[find_peak(peak[i], peak2, timegate)] > 0.3:
                     # the former peak is rejected
                     index = peak.index(find_peak(peak[i], peak2, timegate))
                     peak2[index] = -1
@@ -72,7 +75,7 @@ def HSSeg(Pa, wavtime):
                 timegate = merge_timegate(peak[i], peak[i + 1], timegate)
             # HS noise, reject the one that has smaller energy, and delete the time gate associated with it
             elif interval_timegate(peak[i], peak[i+1], timegate, wavtime) < HSNoise_LS:
-                if Pa[peak[i+1]]-Pa[peak[i]] > 0.6:
+                if Pa[peak[i+1]]-Pa[peak[i]] > 0.3:
                     peak2[i] = -1
                     timegate = delete_timegate(peak[i], timegate)
                 else:
@@ -227,16 +230,19 @@ find_locmax() is to help find the maximal value and return the index
 def find_locmax(data):
     length = len(data)
     locmax = []
+    max = 0
     if length == 1:
-        return [0]
+        return [0], 0
     if data[1] < data[0]:
         locmax.append(0)
     for i in range(1, length-1):
         if data[i] > data[i-1] and data[i] > data[i+1]:
             locmax.append(i)
+        if data[i] > data[max]:
+            max = i
     if data[-2] < data[-1]:
         locmax.append(length-1)
-    return locmax
+    return locmax, max
 
 """
 The function to merge two timegates given the index of the peaks
