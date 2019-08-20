@@ -38,9 +38,9 @@ def NASE(dn, N, samplerate,start_time):
     return Pa, wavtime
 
 if __name__ == "__main__":
-    path = ["01 Apex, Normal S1 S2, Supine, Bell_test.wav","a0001.wav","a0002.wav"]
+    path = ["test1.wav"]
     # crop the .wav file starting from 5 sec to 6 sec
-    audio_clip = [5, 7]
+    audio_clip = [1, 5]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
         wavdata2, wavtime2 = NASE(wavdata, 0.02*samplerate, samplerate,audio_clip[0])

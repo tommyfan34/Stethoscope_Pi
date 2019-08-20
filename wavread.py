@@ -22,25 +22,25 @@ def wavread(path, range=None):
     # read the frame from the data chunk
     datawav = wavfile.readframes(nframe)
     wavfile.close()
-    datause = np.fromstring(datawav, dtype=np.short)
+    datause = np.fromstring(datawav, dtype=np.int16)
     # stereo channel
     if channel == 2:
         datause.shape = -1, 2
         datause = datause.T
-        # normalize the data
-        datause = datause / np.max(datause)
         time = np.arange(0, nframe) * (1.0/framerate)
         if range != None:
             time = time[int(range[0]*framerate) : int(range[1]*framerate)]
             datause = datause[: , int(range[0]*framerate) : int(range[1]*framerate)]
+            # normalize the data
+            datause = datause / np.max(np.abs(datause))
         return datause[0], time, framerate
     # mono channel
     elif channel == 1:
-        datause = datause / np.max(datause)
         time = np.arange(0, nframe) * (1.0/framerate)
         if range != None:
             time = time[int(range[0] * framerate): int(range[1] * framerate)]
             datause = datause[int(range[0]*framerate) : int(range[1]*framerate)]
+            datause = datause / np.max(np.abs(datause))
         return datause, time, framerate
 
 def fft_wav(waveData, plots=True):
@@ -58,30 +58,16 @@ def fft_wav(waveData, plots=True):
     return f_abs
 
 if __name__ == "__main__":
-    path = ["a0001.wav","a0002.wav","01 Apex, Normal S1 S2, Supine, Bell_test.wav"]
+    path = ["test7.wav"]
     # plot the waveform of the input audio
     for i, n in enumerate(path):
         # read the above
-        wavdata, wavtime, samplerate = wavread(n,[5,7])
-        fft_size=65536
-        fft_size=len(wavdata[0])
-        wavdatax = wavdata[0, :fft_size]
-        xf=np.fft.fft(wavdatax)/fft_size
-        xf=xf[range(int(fft_size/2))]
-        xfp = 20 * np.log10(np.clip(np.abs(xf), 1e-20, 1e100))
-        freqz=np.arange(fft_size)*samplerate/fft_size
-        freqz=freqz[range(int(fft_size/2))]
+        wavdata, wavtime, samplerate = wavread(n,[1,5])
         plt.figure(i)
-        plt.subplot(211)
         plt.title(n)
         plt.xlabel("time(s)")
-        plt.ylabel("Normalized Magnitude")
-        plt.plot(wavtime, wavdata)
-        plt.subplot(212)
-        plt.title("frequency components")
-        plt.xlabel("f(Hz)")
-        plt.ylabel("Magnitude(dB)")
-        plt.plot(freqz,xfp)
+        plt.ylabel("magnitude")
+        plt.plot(wavtime,wavdata)
     plt.show()
 
 

@@ -33,7 +33,7 @@ def HSSeg(Pa, wavtime):
     # the minimum threshold to recover lost peaks
     HSLost_LS = 0.5
     # systolic duration allowable tolerance in percentage
-    sys_tolerance = [0.2,0.5]
+    sys_tolerance = [0.15,0.5]
     # diastolic duration allowable tolerance in percentage
     dia_tolerance = [0.3,1]
     timegate = np.zeros_like(wavtime)
@@ -159,6 +159,8 @@ def HSSeg(Pa, wavtime):
     s2_end = np.zeros_like(s2)
     for i, yi in enumerate(s1):
         k = s1[i]
+        while timegate[k] == 1:
+            k -= 1
         count = 0
         # search backwards
         while True:
@@ -175,6 +177,8 @@ def HSSeg(Pa, wavtime):
             k -= 1
         # search forward
         k = s1[i]
+        while timegate[k] == 1:
+            k += 1
         count = 0
         while True:
             if k == len(wavtime)-1:
@@ -191,6 +195,8 @@ def HSSeg(Pa, wavtime):
 
     for i, yi in enumerate(s2):
         k = s2[i]
+        while timegate[k] == 1:
+            k -= 1
         count = 0
         # search backwards
         while True:
@@ -207,6 +213,8 @@ def HSSeg(Pa, wavtime):
             k -= 1
         # search forward
         k = s2[i]
+        while timegate[k] == 1:
+            k += 1
         count = 0
         while True:
             if k == len(wavtime)-1:
@@ -300,9 +308,8 @@ def delete_timegate(i, timegate):
     return timegate
 
 if __name__ == "__main__":
-    path = ["a0004.wav","a0002.wav","a0003.wav","a0008.wav","a0005.wav",
-            "a0006.wav", "a0007.wav", "a0001.wav", "01 Apex, Normal S1 S2, Supine, Bell_test.wav"]
-    audio_clip = [0, 6]
+    path = ["test1.wav", "test2.wav","test3.wav","test4.wav","test5.wav"]
+    audio_clip = [1, 5]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
         wavdata2, wavtime2 = NASE(wavdata, 0.02 * samplerate, samplerate, audio_clip[0])

@@ -21,12 +21,12 @@ def feature_extraction(sig, samplerate):
     return MFCC
 
 if __name__ == "__main__":
-    path = ["a0004.wav","01 Apex, Normal S1 S2, Supine, Bell_test.wav"]
-    audio_clip = [0, 5]
+    path = ["test3.wav"]
+    audio_clip = [1, 5]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
-        y, sr = librosa.load(yi, sr=None, duration=5)
-        MFCC = feature_extraction(y, sr)
+        #y, sr = librosa.load(yi, sr=None, duration=5)
+        MFCC = feature_extraction(wavdata, samplerate)
         figure(i, figsize=(10,4))
         librosa.display.specshow(MFCC, x_axis='time', sr=samplerate, hop_length=int(samplerate*0.01))
         colorbar()

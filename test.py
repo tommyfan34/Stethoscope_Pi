@@ -1,13 +1,16 @@
-import numpy as np
-x=np.array([[1,2,3]]).T
-y=np.array([[4,6],[2,2]])
-print(x.shape)
-print(y.shape)
-z=x.flatten()
-print(z)
-print(z.shape)
-a=[0,2,4]
-b=np.arange(0,10)
-c=b[a]
-print(c)
+import scipy.io.wavfile
+from matplotlib.pyplot import *
 
+def wavread(file):
+    samplerate, data = scipy.io.wavfile.read(file)
+    return data, samplerate
+
+if __name__ == "__main__":
+    path = ["test7.wav"]
+    # crop the .wav file starting from 5 sec to 6 sec
+    audio_clip = [0, 5]
+    for i, yi in enumerate(path):
+        data, framerate = wavread(yi)
+        figure(i)
+        plot(data)
+    show()
