@@ -23,15 +23,15 @@ Date: 7/31/2019
 
 def HSSeg(Pa, wavtime):
     # the low threshold of heart sound noise interval
-    HSNoise_LS = 0.15
+    HSNoise_LS = 0.08
     # the low threshold of splitted heart sound interval
     HSSplit_LS = 0.05
     # the threshold to determine the peaks
-    threshold = 1.1
+    threshold = 0.8
     # the high threshold interval to recover lost peaks
     HSLost_HS = 0.7
     # the minimum threshold to recover lost peaks
-    HSLost_LS = 0.5
+    HSLost_LS = 0.4
     # systolic duration allowable tolerance in percentage
     sys_tolerance = [0.15,0.5]
     # diastolic duration allowable tolerance in percentage
@@ -111,6 +111,7 @@ def HSSeg(Pa, wavtime):
                 if flag != -1:
                     timegate[flag] = 1
                     peak3.insert(i+1, flag)
+    peak3 = sorted(peak3)
 
     # determine which peak is s1 and which is s2
     s1 = []
@@ -159,7 +160,7 @@ def HSSeg(Pa, wavtime):
     s2_end = np.zeros_like(s2)
     for i, yi in enumerate(s1):
         k = s1[i]
-        while timegate[k] == 1:
+        while k != 0 and timegate[k] == 1:
             k -= 1
         count = 0
         # search backwards
@@ -177,7 +178,7 @@ def HSSeg(Pa, wavtime):
             k -= 1
         # search forward
         k = s1[i]
-        while timegate[k] == 1:
+        while k!=len(timegate)-1 and timegate[k] == 1:
             k += 1
         count = 0
         while True:
@@ -195,7 +196,7 @@ def HSSeg(Pa, wavtime):
 
     for i, yi in enumerate(s2):
         k = s2[i]
-        while timegate[k] == 1:
+        while k != 0 and timegate[k] == 1:
             k -= 1
         count = 0
         # search backwards
@@ -213,7 +214,7 @@ def HSSeg(Pa, wavtime):
             k -= 1
         # search forward
         k = s2[i]
-        while timegate[k] == 1:
+        while k != len(timegate)-1 and timegate[k] == 1:
             k += 1
         count = 0
         while True:
@@ -308,7 +309,7 @@ def delete_timegate(i, timegate):
     return timegate
 
 if __name__ == "__main__":
-    path = ["test1.wav", "test2.wav","test3.wav","test4.wav","test5.wav"]
+    path = ["test.wav"]
     audio_clip = [1, 5]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
