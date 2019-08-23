@@ -21,7 +21,7 @@ def feature_extraction(sig, samplerate):
     return MFCC
 
 if __name__ == "__main__":
-    path = ["test3.wav"]
+    path = ["test.wav"]
     audio_clip = [1, 5]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
