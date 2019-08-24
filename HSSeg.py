@@ -8,15 +8,12 @@ import math
 This is a function to divide the heart sound and identify S1, S2
 The input sequence is after normalized average shannon energy (NASE)
 The algorithm consists of picking up the peak by determining a threshold, rejecting the extra peaks, identifying the S1 and S2
-
 Input: Pa, the input HS after NASE
 wavtime, the time sequence of the input
 Output: S1, S2, the sequence of S1 and S2
-
 threshold = the threshold to pick up peaks
 sp = the threshold of the splitted HS, normally 50 ms
 merge = the threshold below which two seperate time gate should be merged into one
-
 Author: Xiao Fan
 Date: 7/31/2019
 """
@@ -230,7 +227,12 @@ def HSSeg(Pa, wavtime):
                 count += 1
             k += 1
 
-
+    s1 = sorted(s1)
+    s2 = sorted(s2)
+    s1_start = sorted(s1_start)
+    s1_end = sorted(s1_end)
+    s2_start = sorted(s2_start)
+    s2_end = sorted(s2_end)
     return wavtime[peak3], wavtime[s1], wavtime[s1_start], wavtime[s1_end], wavtime[s2], wavtime[s2_start], wavtime[s2_end]
 
 """
@@ -309,7 +311,7 @@ def delete_timegate(i, timegate):
     return timegate
 
 if __name__ == "__main__":
-    path = ["test.wav"]
+    path = ["a0001.wav"]
     audio_clip = [1, 5]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
