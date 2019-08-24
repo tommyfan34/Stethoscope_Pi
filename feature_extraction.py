@@ -4,6 +4,7 @@ from matplotlib.pyplot import *
 from HSSeg import HSSeg
 from NASE import NASE
 from MFCC import MFCC
+from scipy.fftpack import dct
 
 """
 This function is to extract the feature in time domain & frequency domain
@@ -36,7 +37,43 @@ for each_freq_band in frequency_ranges:
     index = np.where(np.logical_and(freq >= each_freq_band[0], freq < each_freq_band[1]))
     f_indices.append(index)
 
+# computes the mel coefficients for the sound signal.
+# The theoretical underpinnings are as explained in http://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/#computing-the-mel-filterbank
+def mel_coefficients(signal, sample_rate, nfilt):
+    hamming_distance = signal * np.hamming(len(signal))
+    fft = np.absolute(np.fft.rfft(hamming_distance, NFFT))
+    pow_frames = ((1.0 / NFFT) * ((fft) ** 2))
+    low_freq_mel = 0
+    num_mel_coeff = 12
+    high_freq_mel = (2595 * np.log10(1 + (sample_rate / 2.0) / 700.0))  # Convert Hz to Mel
 
+    mel_points = np.linspace(low_freq_mel, high_freq_mel, nfilt + 2)  # Equally spaced in Mel scale
+    hz_points = (700 * (10**(mel_points / 2595) - 1))  # Convert Mel to Hz
+
+    bin = np.floor((NFFT + 1) * hz_points / sample_rate)
+
+    fbank = np.zeros((nfilt, int(np.floor(NFFT / 2 + 1))))
+    for m in range(1, nfilt + 1):
+        f_m_minus = int(bin[m - 1])   # left
+        f_m = int(bin[m])             # center
+        f_m_plus = int(bin[m + 1])    # right
+
+        for k in range(f_m_minus, f_m):
+            fbank[m - 1, k] = (k - bin[m - 1]) / (bin[m] - bin[m - 1])
+        for k in range(f_m, f_m_plus):
+            fbank[m - 1, k] = (bin[m + 1] - k) / (bin[m + 1] - bin[m])
+    filter_banks = np.dot(pow_frames, fbank.T)
+    filter_banks = np.where(filter_banks == 0, np.finfo(float).eps, filter_banks)  # Numerical Stability
+    filter_banks = 20 * np.log10(filter_banks)  # dB
+
+    mfcc = dct(filter_banks, type=2, axis=0, norm='ortho')[1:(num_mel_coeff+1)]
+    (ncoeff,) = mfcc.shape
+    cep_lifter = ncoeff
+    n = np.arange(ncoeff)
+    lift = 1 + (cep_lifter / 2) * np.sin(np.pi * n / cep_lifter)
+    mfcc *= lift
+    mfcc -= (np.mean(mfcc, axis=0) + 1e-8)
+    return mfcc
 
 """
 time_feature function is to extract the 
@@ -80,7 +117,7 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
     ratio_sys_dia = []
     ratio_sys_s1 = []
     ratio_dia_s2 = []
-    mel_list = []
+    mel_list = [[],[],[],[]]
     power_list = []
     power_freq = []
     rr_list = []
@@ -99,6 +136,8 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
         interval_len_list[0].append(interval_length_s1)
         skew_list[0].append(seq_skew_s1)
         kurtosis_list[0].append(seq_kurtosis_s1)
+        # mel_list[0].append(MFCC(signal[s1_start[s1_index]:s1_end[min_index]], samplerate))
+        mel_list[0].append(mel_coefficients(signal[s1_start[s1_index]:s1_end[min_index]], samplerate, 40))
 
         # find the min # that's bigger than s1_end[min_index] in s2_start
         for i, yi in enumerate(s2_start):
@@ -110,6 +149,8 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
         interval_len_list[1].append(interval_length_sys)
         skew_list[1].append(seq_skew_sys)
         kurtosis_list[1].append(seq_kurtosis_sys)
+        # mel_list[1].append(MFCC(signal[s1_end[min_index]:s2_start[i]], samplerate))
+        mel_list[1].append(mel_coefficients(signal[s1_end[min_index]:s2_start[i]], samplerate, 40))
         min_index = i
 
         # find the min # that's bigger than s2_start[min_index] in s2_end
@@ -122,6 +163,8 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
         interval_len_list[2].append(interval_length_s2)
         skew_list[2].append(seq_skew_s2)
         kurtosis_list[2].append(seq_kurtosis_s2)
+        # mel_list[2].append(MFCC(signal[s2_start[min_index]:s2_end[i]], samplerate))
+        mel_list[2].append(mel_coefficients(signal[s2_start[min_index]:s2_end[i]], samplerate, 40))
         min_index = i
 
         # find the min # that's bigger than s2_end[min_index] in s1_start
@@ -134,6 +177,8 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
         interval_len_list[3].append(interval_length_dia)
         skew_list[3].append(seq_skew_dia)
         kurtosis_list[3].append(seq_kurtosis_dia)
+        # mel_list[3].append(MFCC(signal[s2_end[min_index]:s1_start[i]], samplerate))
+        mel_list[3].append(mel_coefficients(signal[s2_end[min_index]:s1_start[i]], samplerate, 40))
         # calculate the duration of a heart cycle
         interval_length_rr = interval_length_s1 + interval_length_s2 \
             + interval_length_sys + interval_length_dia
@@ -182,6 +227,11 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
     std_s2_kurtosis = np.around(np.std(kurtosis_list[2]), decimals=4)
     mean_diastole_kurtosis = np.around(np.mean(kurtosis_list[3]), decimals=4)
     std_diastole_kurtosis = np.around(np.std(kurtosis_list[3]), decimals=4)
+    # compute the first 12 mel frequency cepstral coefficients for each of the 4 different heart sound state
+    mfcc_s1 = list(np.around(np.median(mel_list[0], axis=0), decimals=4))
+    mfcc_systole = list(np.around(np.median(mel_list[1], axis=0), decimals=4))
+    mfcc_s2 = list(np.around(np.median(mel_list[2], axis=0), decimals=4))
+    mfcc_diastole = list(np.around(np.median(mel_list[3], axis=0), decimals=4))
 
     feature_vector = [mean_RR, std_RR, mean_interval_s1, std_interval_s1, mean_interval_sys, std_interval_sys, \
                       mean_interval_s2, std_interval_s2, mean_interval_dia, std_interval_dia, mean_ratio_sys_rr, \
@@ -189,7 +239,8 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
                       mean_ratio_sys_s1, std_ratio_sys_s1, mean_ratio_dia_s2, std_ratio_dia_s2, mean_s1_skew, \
                       std_s1_skew, mean_systole_skew, std_systole_skew, mean_s2_skew, std_s2_skew, mean_diastole_skew, \
                       std_diastole_skew, mean_s1_kurtosis, std_s1_kurtosis, mean_systole_kurtosis, std_systole_kurtosis, \
-                      mean_s2_kurtosis, std_s2_kurtosis, mean_diastole_kurtosis, std_diastole_kurtosis]
+                      mean_s2_kurtosis, std_s2_kurtosis, mean_diastole_kurtosis, std_diastole_kurtosis, mfcc_s1, mfcc_systole, \
+                      mfcc_s2, mfcc_diastole]
     return feature_vector
 
 if __name__ == "__main__":
