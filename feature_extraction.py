@@ -3,7 +3,6 @@ from wavread import wavread
 from matplotlib.pyplot import *
 from HSSeg import HSSeg
 from NASE import NASE
-from MFCC import MFCC
 from scipy.fftpack import dct
 
 """
@@ -102,8 +101,11 @@ def frequncy_feature(signal, samplerate):
     # computes the power spectrum of the signal
     hamming_distance = signal * np.hamming(len(signal))
     fft = np.absolute(np.fft.rfft(hamming_distance, NFFT))
-    power_spec = np.around(fft[:NFFT / 2], decimals=4)
-    p_spec = ((1.0 / NFFT) * ((fft) ** 2))
+    power_spec = np.around(fft[:int(NFFT/2)], decimals=4)
+    median_power = []
+    for r, each_f_index in enumerate(f_indices):
+        median_power.append(power_spec[each_f_index])
+    return median_power
 
 """
 feature_extraction is to extract the feature from a HS record
@@ -118,8 +120,12 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
     ratio_sys_s1 = []
     ratio_dia_s2 = []
     mel_list = [[],[],[],[]]
-    power_list = []
+    power_list = [[],[],[],[]]
     power_freq = []
+    power_spectrum_s1 = []
+    power_spectrum_sys = []
+    power_spectrum_s2 = []
+    power_spectrum_dia = []
     rr_list = []
     feature_vector = []
     for s1_index, s1_y in enumerate(s1_start):
@@ -138,6 +144,7 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
         kurtosis_list[0].append(seq_kurtosis_s1)
         # mel_list[0].append(MFCC(signal[s1_start[s1_index]:s1_end[min_index]], samplerate))
         mel_list[0].append(mel_coefficients(signal[s1_start[s1_index]:s1_end[min_index]], samplerate, 40))
+        power_list[0].append(frequncy_feature(signal[s1_start[s1_index]:s1_end[min_index]], samplerate))
 
         # find the min # that's bigger than s1_end[min_index] in s2_start
         for i, yi in enumerate(s2_start):
@@ -151,6 +158,7 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
         kurtosis_list[1].append(seq_kurtosis_sys)
         # mel_list[1].append(MFCC(signal[s1_end[min_index]:s2_start[i]], samplerate))
         mel_list[1].append(mel_coefficients(signal[s1_end[min_index]:s2_start[i]], samplerate, 40))
+        power_list[1].append(frequncy_feature(signal[s1_end[min_index]:s2_start[i]], samplerate))
         min_index = i
 
         # find the min # that's bigger than s2_start[min_index] in s2_end
@@ -165,6 +173,7 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
         kurtosis_list[2].append(seq_kurtosis_s2)
         # mel_list[2].append(MFCC(signal[s2_start[min_index]:s2_end[i]], samplerate))
         mel_list[2].append(mel_coefficients(signal[s2_start[min_index]:s2_end[i]], samplerate, 40))
+        power_list[2].append(frequncy_feature(signal[s2_start[min_index]:s2_end[i]], samplerate))
         min_index = i
 
         # find the min # that's bigger than s2_end[min_index] in s1_start
@@ -179,6 +188,7 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
         kurtosis_list[3].append(seq_kurtosis_dia)
         # mel_list[3].append(MFCC(signal[s2_end[min_index]:s1_start[i]], samplerate))
         mel_list[3].append(mel_coefficients(signal[s2_end[min_index]:s1_start[i]], samplerate, 40))
+        power_list[3].append(frequncy_feature(signal[s2_end[min_index]:s1_start[i]], samplerate))
         # calculate the duration of a heart cycle
         interval_length_rr = interval_length_s1 + interval_length_s2 \
             + interval_length_sys + interval_length_dia
@@ -232,6 +242,24 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
     mfcc_systole = list(np.around(np.median(mel_list[1], axis=0), decimals=4))
     mfcc_s2 = list(np.around(np.median(mel_list[2], axis=0), decimals=4))
     mfcc_diastole = list(np.around(np.median(mel_list[3], axis=0), decimals=4))
+    # compute the power spectrum of different periods
+    for t in range(len(f_indices)):
+        temp = []
+        for i in range(len(power_list[0])):
+            temp.append(np.median(power_list[0][i][t]))
+        power_spectrum_s1.append(np.around(np.median(temp), decimals=4))
+        temp = []
+        for i in range(len(power_list[1])):
+            temp.append(np.median(power_list[1][i][t]))
+        power_spectrum_sys.append(np.around(np.median(temp), decimals=4))
+        temp = []
+        for i in range(len(power_list[2])):
+            temp.append(np.median(power_list[2][i][t]))
+        power_spectrum_s2.append(np.around(np.median(temp), decimals=4))
+        temp = []
+        for i in range(len(power_list[3])):
+            temp.append(np.median(power_list[3][i][t]))
+        power_spectrum_dia.append(np.around(np.median(temp), decimals=4))
 
     feature_vector = [mean_RR, std_RR, mean_interval_s1, std_interval_s1, mean_interval_sys, std_interval_sys, \
                       mean_interval_s2, std_interval_s2, mean_interval_dia, std_interval_dia, mean_ratio_sys_rr, \
@@ -239,8 +267,15 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
                       mean_ratio_sys_s1, std_ratio_sys_s1, mean_ratio_dia_s2, std_ratio_dia_s2, mean_s1_skew, \
                       std_s1_skew, mean_systole_skew, std_systole_skew, mean_s2_skew, std_s2_skew, mean_diastole_skew, \
                       std_diastole_skew, mean_s1_kurtosis, std_s1_kurtosis, mean_systole_kurtosis, std_systole_kurtosis, \
-                      mean_s2_kurtosis, std_s2_kurtosis, mean_diastole_kurtosis, std_diastole_kurtosis, mfcc_s1, mfcc_systole, \
-                      mfcc_s2, mfcc_diastole]
+                      mean_s2_kurtosis, std_s2_kurtosis, mean_diastole_kurtosis, std_diastole_kurtosis]
+    feature_vector.extend(mfcc_s1)
+    feature_vector.extend(mfcc_systole)
+    feature_vector.extend(mfcc_s2)
+    feature_vector.extend(mfcc_diastole)
+    feature_vector.extend(power_spectrum_s1)
+    feature_vector.extend(power_spectrum_sys)
+    feature_vector.extend(power_spectrum_s2)
+    feature_vector.extend(power_spectrum_dia)
     return feature_vector
 
 if __name__ == "__main__":
