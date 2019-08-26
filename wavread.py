@@ -40,9 +40,9 @@ def wavread(path, range=None):
         if range != None:
             time = time[int(range[0] * framerate): int(range[1] * framerate)]
             datause = datause[int(range[0]*framerate) : int(range[1]*framerate)]
-            #for i, yi in enumerate(datause):
-            #    if abs(yi) >= 6000:
-            #        datause[i] = 0
+            for i, yi in enumerate(datause):
+                if abs(yi) >= 5000:
+                    datause[i] = 0
             datause = datause / np.max(np.abs(datause))
         return datause, time, framerate
 

@@ -4,6 +4,8 @@ from matplotlib.pyplot import *
 from HSSeg import HSSeg
 from NASE import NASE
 from scipy.fftpack import dct
+import csv
+import xlrd
 
 """
 This function is to extract the feature in time domain & frequency domain
@@ -279,7 +281,11 @@ def feature_extraction(signal,samplerate,s1_start,s1_end,s2_start,s2_end):
     return feature_vector
 
 if __name__ == "__main__":
-    path = ["test.wav"]
+    # read the xlsx file that specify the audio file
+    data = xlrd.open_workbook("training_file.xlsx")
+    table = data.sheets()[0]
+    path = table.col_values(3)
+
     audio_clip = [1,5]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
@@ -290,4 +296,15 @@ if __name__ == "__main__":
         s2_start = ((s2_start-audio_clip[0])*samplerate).astype(int)
         s2_end = ((s2_end-audio_clip[0])*samplerate).astype(int)
         feature_vector = feature_extraction(wavdata, samplerate, s1_start, s1_end, s2_start, s2_end)
+        # write the feature vector into csv file
+        with open("feature.csv", "a", newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(feature_vector)
+        # HS type: 0 is normal, 1 is abnormal
+        HS_type = path[i][0]
+        with open("label.csv", "a", newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow([HS_type])
+
+
 

@@ -311,7 +311,7 @@ def delete_timegate(i, timegate):
     return timegate
 
 if __name__ == "__main__":
-    path = ["a0001.wav"]
+    path = ["test12.wav"]
     audio_clip = [1, 5]
     for i, yi in enumerate(path):
         wavdata, wavtime, samplerate = wavread(yi, audio_clip)
@@ -321,7 +321,7 @@ if __name__ == "__main__":
         subplot(211)
         xlabel('time(s)')
         ylabel('magnitude')
-        title('Before NASE')
+        title(path[i])
         plot(wavtime, wavdata)
         subplot(212)
         xlabel('time(s')
