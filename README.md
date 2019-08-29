@@ -23,6 +23,8 @@ to start sampling the heart sound
 none of these three denoising algorithm work well, so I didn't use them at last  
 * NASE.py: take the nomalized average shannon energy envelope of the heart sound  
 * HSSeg.py: segment the heart sound into 4 periods: S1, systole, S2, diastole  
+The segmentation algorithm may need further improvement
 * feature_extraction.py: extract the features in time domain and frequency domain (including Mel Frequncy Cepstral Coefficients).  
 The .wav files whose features are to be extracted are specified in training_file.xlsx, with the first column to be the original file name, second column is the label (0 is normal, 1 is abnormal), third column is the diagnosis, fourth column is the modified file name. feature.csv is comprised of the feature vector extracted. For each sample, 120 features are extracted. label.csv is the label of each sample.  
-* model_training.py: 
+* model_training.py: train the SVM model. Output model file is train_model.pkl  
+* model_test.py: give the classification of the heart sound  
