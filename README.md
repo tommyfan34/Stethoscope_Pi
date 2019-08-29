@@ -28,3 +28,8 @@ The segmentation algorithm may need further improvement
 The .wav files whose features are to be extracted are specified in training_file.xlsx, with the first column to be the original file name, second column is the label (0 is normal, 1 is abnormal), third column is the diagnosis, fourth column is the modified file name. feature.csv is comprised of the feature vector extracted. For each sample, 120 features are extracted. label.csv is the label of each sample.  
 * model_training.py: train the SVM model. Output model file is train_model.pkl  
 * model_test.py: give the classification of the heart sound  
+
+## Documents
+* stetho_pre_2.0.zip contains the preprocess circuit Altium Designer projects  
+* BOM.xlsx is the bill of material  
+* It also contains the papers I referenced during the project  
