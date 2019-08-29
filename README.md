@@ -3,7 +3,7 @@ This is an electronic stethoscope using Raspberry Pi 3
 Created by Xiao Fan @ UCLA
 
 ## Prototype Setup
-
+![image of prototype setup](https://github.com/tommyfan34/Stethoscope_Pi/blob/master/Documents/WeChat%20Screenshot_20190829084743.png)
 
 ## Usage
 In the Raspberry Pi, type in  
